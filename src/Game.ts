@@ -1,20 +1,37 @@
 import { Chess } from 'chess.js'
 import { WebSocket } from 'ws'
-import { GAME_OVER, MOVE } from './messages'
+import { GAME_OVER, INIT_GAME, MOVE } from './messages'
 
 export class Game {
   public player1: WebSocket
   public player2: WebSocket
   private board: Chess
-  private moves: string[]
+  private moveCount: number = 0
   private startTime: Date
 
   constructor(player1: WebSocket, player2: WebSocket) {
     this.player1 = player1
     this.player2 = player2
     this.board = new Chess()
-    this.moves = []
     this.startTime = new Date()
+
+    this.player1.send(
+      JSON.stringify({
+        type: INIT_GAME,
+        payload: {
+          colors: 'white',
+        },
+      })
+    )
+
+    this.player2.send(
+      JSON.stringify({
+        type: INIT_GAME,
+        payload: {
+          colors: 'black',
+        },
+      })
+    )
   }
 
   makeMove(
@@ -24,22 +41,23 @@ export class Game {
       to: string
     }
   ) {
+    console.log(move)
     //validation here
     //is it users move
     //is it a valid move
+    if (!(this.moveCount & 1) && socket !== this.player1) return
+    if (this.moveCount & 1 && socket !== this.player2) return
 
     try {
-      this.board.move({
-        from: move.from,
-        to: move.to,
-      })
+      this.board.move(move)
     } catch (error) {
-      console.log('on move', error)
+      console.log('on move \n', error)
+      alert('invalid move')
       return
     }
     if (this.board.isGameOver()) {
       // send tghe game over message to both player
-      this.player1.emit(
+      this.player1.send(
         JSON.stringify({
           type: GAME_OVER,
           payload: {
@@ -49,15 +67,15 @@ export class Game {
       )
     }
 
-    if (this.board.moves.length & 1) {
-      this.player1.emit(
+    if (this.moveCount & 1) {
+      this.player1.send(
         JSON.stringify({
           type: MOVE,
           payload: move,
         })
       )
     } else {
-      this.player2.emit(
+      this.player2.send(
         JSON.stringify({
           type: MOVE,
           payload: move,
@@ -65,6 +83,7 @@ export class Game {
       )
     }
 
+    this.moveCount++
     //update the board
     // push the move
     //check id the game is over

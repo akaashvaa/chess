@@ -23,10 +23,10 @@ export class GameManager {
   }
 
   private addHandler(socket: WebSocket) {
-    socket.on('message', (data) => {
+    socket.on('message', async (data) => {
       const message = JSON.parse(data.toString())
 
-      if (message.type == INIT_GAME) {
+      if (message.type === INIT_GAME) {
         if (this.pendingUser) {
           // start a new game
           const game = new Game(this.pendingUser, socket)
@@ -36,12 +36,12 @@ export class GameManager {
           this.pendingUser = socket
         }
       }
-      if (message.type == MOVE) {
+      if (message.type === MOVE) {
         const game = this.games.find(
           (game) => game.player1 === socket || game.player2 === socket
         )
         if (game) {
-          game.makeMove(socket, message.move)
+          game.makeMove(socket, message.payload.move)
         }
       }
     })
