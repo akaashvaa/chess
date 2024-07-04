@@ -33,7 +33,15 @@ export class Game {
       })
     )
   }
+  reset() {
+    this.board.reset()
+    this.moveCount = 0
+  }
 
+  broadcast(message: any) {
+    this.player1.send(JSON.stringify(message))
+    this.player2.send(JSON.stringify(message))
+  }
   makeMove(
     socket: WebSocket,
     move: {
@@ -52,7 +60,6 @@ export class Game {
       this.board.move(move)
     } catch (error) {
       console.log('on move \n', error)
-      alert('invalid move')
       return
     }
     if (this.board.isGameOver()) {

@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws'
 import { Game } from './Game'
-import { INIT_GAME, MOVE } from './messages'
+import { INIT_GAME, MOVE, RESET_GAME } from './messages'
 
 export class GameManager {
   private games: Game[]
@@ -42,6 +42,20 @@ export class GameManager {
         )
         if (game) {
           game.makeMove(socket, message.payload.move)
+        }
+      }
+      if (message.type === RESET_GAME) {
+        const game = this.games.find(
+          (game) => game.player1 === socket || game.player2 === socket
+        )
+        if (game) {
+          game.reset()
+          game.broadcast({
+            message: 'game has been reset',
+            type: RESET_GAME,
+          })
+        } else {
+          console.log('cant reset')
         }
       }
     })
